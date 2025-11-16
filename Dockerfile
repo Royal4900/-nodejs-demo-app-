@@ -12,7 +12,8 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY package*.json ./
 
 # Install dependencies (production only)
-RUN npm ci --only=production && \
+# Using npm install instead of npm ci since package-lock.json is not present
+RUN npm install --only=production && \
     npm cache clean --force
 
 # Copy application files
