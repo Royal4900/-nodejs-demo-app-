@@ -1,0 +1,21 @@
+{
+  "name": "nodejs-demo-app",
+  "version": "1.0.0",
+  "description": "A simple Node.js demo application for CI/CD pipeline automation",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "nodejs",
+    "demo",
+    "cicd"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+
