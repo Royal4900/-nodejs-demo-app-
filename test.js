@@ -12,8 +12,11 @@ function runTests() {
   let failed = 0;
   let server;
 
-  // Start test server
-  server = app.listen(0); // Use random port for testing
+  // Start test server and wait for it to be ready
+  server = app.listen(0, () => {
+    // Server is now ready, start running tests
+    runTest1();
+  });
 
   // Helper function to make HTTP requests
   function makeRequest(path, callback) {
@@ -44,81 +47,104 @@ function runTests() {
       callback(error, null, null);
     });
 
+    req.setTimeout(5000, () => {
+      req.destroy();
+      callback(new Error('Request timeout'), null, null);
+    });
+
     req.end();
   }
 
   // Test 1: Root endpoint
-  try {
+  function runTest1() {
     makeRequest('/', (error, statusCode, data) => {
-      if (error) throw error;
-      assert.strictEqual(statusCode, 200, 'Root endpoint should return 200');
-      assert.strictEqual(data.message, 'Welcome to Node.js Demo App', 'Should have correct message');
-      assert.strictEqual(data.version, '1.0.0', 'Should have correct version');
-      assert.strictEqual(data.status, 'running', 'Should have running status');
-      console.log('✓ Test 1 passed: Root endpoint');
-      passed++;
-      runNextTest();
+      if (error) {
+        console.error('✗ Test 1 failed:', error.message);
+        failed++;
+        runTest2();
+        return;
+      }
+      try {
+        assert.strictEqual(statusCode, 200, 'Root endpoint should return 200');
+        assert.strictEqual(data.message, 'Welcome to Node.js Demo App', 'Should have correct message');
+        assert.strictEqual(data.version, '1.0.0', 'Should have correct version');
+        assert.strictEqual(data.status, 'running', 'Should have running status');
+        console.log('✓ Test 1 passed: Root endpoint');
+        passed++;
+      } catch (err) {
+        console.error('✗ Test 1 failed:', err.message);
+        failed++;
+      }
+      runTest2();
     });
-  } catch (error) {
-    console.error('✗ Test 1 failed:', error.message);
-    failed++;
-    runNextTest();
   }
 
   // Test 2: Health endpoint
-  function runNextTest() {
-    try {
-      makeRequest('/health', (error, statusCode, data) => {
-        if (error) throw error;
+  function runTest2() {
+    makeRequest('/health', (error, statusCode, data) => {
+      if (error) {
+        console.error('✗ Test 2 failed:', error.message);
+        failed++;
+        runTest3();
+        return;
+      }
+      try {
         assert.strictEqual(statusCode, 200, 'Health endpoint should return 200');
         assert.strictEqual(data.status, 'healthy', 'Should have healthy status');
         assert(typeof data.uptime === 'number', 'Uptime should be a number');
         console.log('✓ Test 2 passed: Health endpoint');
         passed++;
-        runThirdTest();
-      });
-    } catch (error) {
-      console.error('✗ Test 2 failed:', error.message);
-      failed++;
-      runThirdTest();
-    }
+      } catch (err) {
+        console.error('✗ Test 2 failed:', err.message);
+        failed++;
+      }
+      runTest3();
+    });
   }
 
   // Test 3: API info endpoint
-  function runThirdTest() {
-    try {
-      makeRequest('/api/info', (error, statusCode, data) => {
-        if (error) throw error;
+  function runTest3() {
+    makeRequest('/api/info', (error, statusCode, data) => {
+      if (error) {
+        console.error('✗ Test 3 failed:', error.message);
+        failed++;
+        runTest4();
+        return;
+      }
+      try {
         assert.strictEqual(statusCode, 200, 'API info endpoint should return 200');
         assert.strictEqual(data.app, 'nodejs-demo-app', 'Should have correct app name');
         assert(typeof data.environment === 'string', 'Environment should be a string');
         assert(typeof data.nodeVersion === 'string', 'Node version should be a string');
         console.log('✓ Test 3 passed: API info endpoint');
         passed++;
-        runFourthTest();
-      });
-    } catch (error) {
-      console.error('✗ Test 3 failed:', error.message);
-      failed++;
-      runFourthTest();
-    }
+      } catch (err) {
+        console.error('✗ Test 3 failed:', err.message);
+        failed++;
+      }
+      runTest4();
+    });
   }
 
   // Test 4: 404 endpoint
-  function runFourthTest() {
-    try {
-      makeRequest('/nonexistent', (error, statusCode, data) => {
-        if (error) throw error;
+  function runTest4() {
+    makeRequest('/nonexistent', (error, statusCode, data) => {
+      if (error) {
+        console.error('✗ Test 4 failed:', error.message);
+        failed++;
+        finishTests();
+        return;
+      }
+      try {
         assert.strictEqual(statusCode, 404, 'Nonexistent endpoint should return 404');
         console.log('✓ Test 4 passed: 404 handling');
         passed++;
-        finishTests();
-      });
-    } catch (error) {
-      console.error('✗ Test 4 failed:', error.message);
-      failed++;
+      } catch (err) {
+        console.error('✗ Test 4 failed:', err.message);
+        failed++;
+      }
       finishTests();
-    }
+    });
   }
 
   // Finish tests and close server
